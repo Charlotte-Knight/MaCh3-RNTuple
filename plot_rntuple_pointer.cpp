@@ -46,7 +46,6 @@ ROOT::RDF::RNode getSelectedDF(ROOT::RDF::RNode df) {
 
 ROOT::RDF::RResultPtr<TH1D> getHist(ROOT::RDF::RNode df) {
   std::vector<float> bins = {0., 0.5, 1., 1.25, 1.5, 1.75, 2., 2.25, 2.5, 2.75, 3., 3.25, 3.5, 3.75, 4., 5., 6., 10.};
-  //std::vector<float> bins = {0., 10.};
   int nbins = bins.size() - 1;
   return df.Histo1D<float, float>(
     {"hELep", "ELep;ELep [GeV];Events", nbins, bins.data()},
@@ -57,11 +56,8 @@ ROOT::RDF::RResultPtr<TH1D> getHist(ROOT::RDF::RNode df) {
 
 ROOT::RDF::RNode readDF(char const *filename, char const *ntuplename, std::vector<std::string> columns) {
   ROOT::RDataFrame df(ntuplename, filename);
-  //auto df_cached = df;
   auto df_cached = df.Cache(columns);
   return df_cached.Define("RecoEnu", "Enu_true");
-  //return df_cached.Define("RecoEnu", "Enu_true").Range(100000);
-  //return df;
 }
 
 std::vector<TSpline3*> getSplines(char const *filename) {
@@ -121,11 +117,9 @@ ROOT::RDF::RNode getReweightedDF(ROOT::RDF::RNode df, Params* params, std::vecto
   auto df_shift = getShiftedDF(df, params);
   auto df_sel = getSelectedDF(df_shift);
   auto df_norm_weighted = getNormWeightedDF(df_sel, params);
-  auto df_spline_weighted = getSplineWeightedDF(df_norm_weighted, splines, binEdges, params); // add alpha as parameter if needed
+  auto df_spline_weighted = getSplineWeightedDF(df_norm_weighted, splines, binEdges, params);
   return df_spline_weighted.Define("evt_weight", "norm_weight * spline_weight");
-  //return df_norm_weighted.Define("evt_weight", "norm_weight"); // ignore spline weight for now
-  //return df.Define("evt_weight", []() -> float { return 1.0; }).Define("ELep_shift", "ELep"); // ignore weights for now
-  //return df;
+
 }
 
 ROOT::RDF::RResultPtr<TH1D> getReweightedHist(ROOT::RDF::RNode df, Params* params, std::vector<TSpline3*> splines, std::vector<float> binEdges) { 
@@ -140,7 +134,7 @@ int main(int argc, char const *argv[])
       return 1;
   }
   
-  // ROOT::EnableImplicitMT();
+  ROOT::EnableImplicitMT();
   
   auto df = readDF(argv[1], "Events", {"Enu_true", "ELep", "Q2"});
   df.Describe().Print();
@@ -155,8 +149,6 @@ int main(int argc, char const *argv[])
 
   // creates dataframe and corresponding computation graph
   auto df_reweighted = getReweightedDF(df, current_params, splines, spline_binning);
-  //df_reweighted.Count().GetValue();
-
   // runs graph once to trigger JIT compilation 
   auto h = getHist(df_reweighted);
   h->GetEntries();
@@ -169,10 +161,8 @@ int main(int argc, char const *argv[])
 
   for (auto params : random_params) {
     *current_params = params;
-    //df_reweighted.Count().GetValue(); // trigger computation with new parameters
     auto h = getHist(df_reweighted);
     h->GetEntries(); // force histogram to be filled
-    //std::cout << "Sum: " << h->GetSum() << std::endl; // print sum to check that results change with different parameters
   }
 
   auto end = std::chrono::high_resolution_clock::now();
