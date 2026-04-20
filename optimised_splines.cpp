@@ -293,13 +293,13 @@ void checkSplines(const std::vector<std::vector<FastTSpline3Eval>> &fast_splines
 }
 
 int main() {
-  //ROOT::EnableImplicitMT();
+  ROOT::EnableImplicitMT();
 
   auto dataset_name = "Events";
   auto dataset_file = "RNTuples/NuWro_numu_x_numu_FlatTree_Beam.root";
   auto splines_file = "BinnedSplinesTutorialInputs2D.root";
 
-  int n_spline_systs = 100;
+  int n_spline_systs = 1000;
 
   auto splines = getSplines(splines_file);
   auto spline_binning = getSplineBinning(splines_file);
